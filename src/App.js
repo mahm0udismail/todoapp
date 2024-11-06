@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AiOutlinePlus } from 'react-icons/ai';
 import Todo from './Todo';
+import { db } from './firebase/firebase';
+import { query, collection, onSnapshot, addDoc } from 'firebase/firestore';
 
 const style = {
   bg: `h-screen w-screen p-4 bg-gradient-to-r from-[#2F80ED] to-[#1CB5E0]`,
@@ -13,19 +15,52 @@ const style = {
 };
 
 function App() {
-  const todos = ['test', 'test2'];
+  const [todos, setTodos] = useState([]);
+  const [todoText, setTodoText] = useState(''); // State for the input field
+
+  useEffect(() => {
+    const q = query(collection(db, 'TodoList'));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      let todosArr = [];
+      querySnapshot.forEach((doc) => {
+        todosArr.push({ ...doc.data(), id: doc.id });
+      });
+      setTodos(todosArr);
+      console.log('todoarr', todosArr);
+    });
+
+    return () => unsubscribe();  // Clean up the subscription
+  }, []);
+
+  // Handle adding a new todo
+  const addTodo = async (e) => {
+    e.preventDefault(); // Prevent default form submission behavior
+    if (todoText.trim()) {
+      try {
+        await addDoc(collection(db, 'TodoList'), {
+          text: todoText,
+          completed: false,
+        });
+        setTodoText(''); // Clear the input field after adding the todo
+      } catch (error) {
+        console.error('Error adding todo: ', error);
+      }
+    }
+  };
 
   return (
     <div className={style.bg}>
       <div className={style.container}>
         <h3 className={style.heading}>Todo App</h3>
-        <form className={style.form}>
+        <form className={style.form} onSubmit={addTodo}>
           <input
             className={style.input}
             type='text'
             placeholder='Add Todo'
+            value={todoText}
+            onChange={(e) => setTodoText(e.target.value)} // Update state on input change
           />
-          <button className={style.button}>
+          <button className={style.button} type='submit'>
             <AiOutlinePlus size={30} />
           </button>
         </form>
