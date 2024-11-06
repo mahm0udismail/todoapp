@@ -2,7 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { AiOutlinePlus } from 'react-icons/ai';
 import Todo from './Todo';
 import { db } from './firebase/firebase';
-import { query, collection, onSnapshot, addDoc } from 'firebase/firestore';
+import {   query,
+  collection,
+  onSnapshot,
+  updateDoc,
+  doc,
+  addDoc,
+  deleteDoc, } from 'firebase/firestore';
 
 const style = {
   bg: `h-screen w-screen p-4 bg-gradient-to-r from-[#2F80ED] to-[#1CB5E0]`,
@@ -17,6 +23,8 @@ const style = {
 function App() {
   const [todos, setTodos] = useState([]);
   const [todoText, setTodoText] = useState(''); // State for the input field
+
+  // read
 
   useEffect(() => {
     const q = query(collection(db, 'TodoList'));
@@ -46,7 +54,24 @@ function App() {
         console.error('Error adding todo: ', error);
       }
     }
+    else{
+      alert("please add text")
+    }
   };
+
+  // update
+  const updateTodo = async(todo)=>{
+    await updateDoc(doc(db,'TodoList',todo.id),{
+      completed: !todo.completed,
+    })
+  }
+
+  // delete
+  const deleteTodo = async (id) =>{
+    await deleteDoc(doc(db,'TodoList', id))
+  }
+
+
 
   return (
     <div className={style.bg}>
@@ -66,7 +91,12 @@ function App() {
         </form>
         <ul>
           {todos.map((todo, index) => (
-            <Todo key={index} todo={todo} />
+            <Todo 
+            key={index} 
+            todo={todo} 
+            toggleComplete={updateTodo}
+            deleteTodo={deleteTodo}
+            />
           ))}
         </ul>
         <p className={style.count}> You have {todos.length} todos </p>
